@@ -154,7 +154,6 @@ class LBaaSv2Driver(base.LBaaSDriver):
         return response
 
     def release_loadbalancer(self, loadbalancer):
-        os_net = clients.get_network_client()
         lbaas = clients.get_loadbalancer_client()
         self._release(
             loadbalancer,
@@ -163,15 +162,7 @@ class LBaaSv2Driver(base.LBaaSDriver):
             loadbalancer.id,
             cascade=True)
 
-        sg_id = self._find_listeners_sg(loadbalancer)
-        if sg_id:
-            # Note: reusing activation timeout as deletion timeout
-            self._wait_for_deletion(loadbalancer, _ACTIVATION_TIMEOUT)
-            try:
-                os_net.delete_security_group(sg_id)
-            except os_exc.SDKException:
-                LOG.exception('Error when deleting loadbalancer security '
-                              'group. Leaving it orphaned.')
+        self._wait_for_deletion(loadbalancer, _ACTIVATION_TIMEOUT)
 
     def _create_listeners_acls(self, loadbalancer, port, target_port,
                                protocol, lb_sg, new_sgs, listener_id):
